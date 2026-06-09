@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{COMPANY}} CXM Operations Console - {{CUSTOMER_SHORT}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+<script>{{CHARTJS}}</script>
+<style>
+:root {
+  --bg-0: #f8fafc;
+  --bg-1: #ffffff;
+  --bg-2: #f1f5f9;
+  --bg-3: #e2e8f0;
+  --bg-card: #ffffff;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --ink-1: #0f172a;
+  --ink-2: #334155;
+  --ink-3: #313131;
+  --ink-4: #505050;
+  --forge: #ef4444;
+  --forge-glow: #ef4444;
+  --steel: #3b82f6;
+  --emerald: #10b981;
+  --amber: #f59e0b;
+  --crimson: #ef4444;
+  --violet: #8b5cf6;
+  --grid: rgba(255,107,26,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-hover: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.02);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  background: var(--bg-0);
+  color: var(--ink-1);
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* TOP BAR */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 32px;
+  display: flex; align-items: center; gap: 32px;
+}
+.brand { display: flex; align-items: baseline; gap: 14px; }
+.brand-mark {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--forge) 0%, #c84a0d 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 18px; font-weight: 800; color: white;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(255,107,26,0.25);
+  position: relative;
+}
+.brand-mark::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 60%);
+  border-radius: 4px;
+}
+.brand-name {
+  font-family: 'Fraunces', serif;
+  font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-1);
+}
+.brand-sub {
+  font-size: 11px; font-weight: 500; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.18em; margin-left: 6px;
+}
+.divider { width: 1px; height: 28px; background: var(--line-strong); }
+
+.session-meta { display: flex; gap: 28px; align-items: center; flex: 1; }
+.session-item { display: flex; flex-direction: column; gap: 2px; }
+.session-label { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.15em; font-weight: 600; }
+.session-value { font-size: 13px; color: var(--ink-2); font-weight: 600; font-family: 'Inter', monospace; }
+
+.live-indicator {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 100px;
+  font-size: 11px; font-weight: 600; color: var(--emerald);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 0 0 var(--emerald);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+  70% { box-shadow: 0 0 0 10px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+
+/* MAIN */
+.main { padding: 32px; max-width: 1800px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* HERO */
+.hero { display: grid; grid-template-columns: 1fr 380px; gap: 28px; margin-bottom: 28px; }
+.hero-title-block { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--forge);
+  text-transform: uppercase; letter-spacing: 0.25em; font-weight: 600;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 64px; font-weight: 600; line-height: 1.0;
+  letter-spacing: -0.03em; font-variation-settings: "opsz" 96;
+  color: var(--ink-1);
+}
+.hero h1 em { font-style: italic; color: var(--forge); font-weight: 500; }
+.hero-sub { font-size: 15px; color: var(--ink-3); max-width: 640px; line-height: 1.55; }
+
+.customer-card {
+  padding: 22px 24px; position: relative;
+}
+.customer-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 8px 8px 0 0;
+}
+.customer-card .label { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.2em; font-weight: 600; }
+.customer-card .name {
+  font-family: 'Inter', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 8px 0 14px 0;
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.customer-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.cm-item .cm-label { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.12em; }
+.cm-item .cm-value { font-size: 12px; color: var(--ink-2); font-weight: 600; margin-top: 3px; font-family: 'JetBrains Mono', monospace; }
+
+/* FILTERS */
+.filters-bar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 28px; padding: 12px 16px;
+  background: var(--bg-1); border: 1px solid var(--line); border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+.filter-label { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.15em; font-weight: 600; margin-right: 8px; }
+.filter-chip {
+  padding: 7px 14px; border: 1px solid var(--line-strong);
+  background: transparent; border-radius: 100px;
+  font-size: 12px; color: var(--ink-2); cursor: pointer;
+  transition: all 0.2s; font-family: inherit; font-weight: 500;
+}
+.filter-chip:hover { border-color: var(--forge); color: var(--forge); }
+.filter-chip.active { background: var(--forge); border-color: var(--forge); color: white; font-weight: 600; }
+.filter-search {
+  margin-left: auto; background: var(--bg-2); border: 1px solid var(--line-strong);
+  color: var(--ink-1); padding: 7px 14px; border-radius: 6px;
+  font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  min-width: 220px; outline: none;
+}
+.filter-search:focus { border-color: var(--forge); }
+.filter-search::placeholder { color: var(--ink-4); }
+
+/* SECTIONS */
+.section { margin-bottom: 36px; }
+.section-header {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 18px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.section-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--forge); font-weight: 600; letter-spacing: 0.1em; }
+.section-title { font-family: 'Fraunces', serif; font-size: 24px; font-weight: 600; letter-spacing: -0.015em; color: var(--ink-1); }
+.section-sub { font-size: 13px; color: var(--ink-3); margin-left: auto; }
+
+/* KPI */
+.kpi-grid { 
+  display: grid; 
+  grid-template-columns: repeat(5, 1fr); 
+  gap: 10px; 
+}
+.kpi-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px 12px;
+  min-height: 120px;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.kpi-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+}
+.kpi-card::before {
+  display: none;
+}
+.kpi-card.kpi-forge {
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  border-left: 3px solid #ef4444;
+}
+.kpi-card.kpi-emerald {
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+  border-left: 3px solid #10b981;
+}
+.kpi-card.kpi-steel {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  border-left: 3px solid #3b82f6;
+}
+.kpi-card.kpi-violet {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  border-left: 3px solid #8b5cf6;
+}
+.kpi-card.kpi-crimson {
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  border-left: 3px solid #ef4444;
+}
+.kpi-card.kpi-amber {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  border-left: 3px solid #f59e0b;
+}
+
+.kpi-label { 
+  font-size: 11px; 
+  color: var(--ink-4); 
+  text-transform: uppercase; 
+  letter-spacing: 0.12em; 
+  font-weight: 700; 
+}
+.kpi-value {
+  font-family: 'Inter', monospace;
+  font-size: 34px; 
+  font-weight: 700; 
+  color: var(--ink-1);
+  margin-top: 6px; 
+  line-height: 1.1; 
+  letter-spacing: -0.02em;
+}
+.kpi-value .unit { 
+  font-size: 16px; 
+  color: var(--ink-3); 
+  margin-left: 3px; 
+  font-weight: 500; 
+}
+.kpi-delta {
+  font-size: 12px; 
+  margin-top: 6px;
+  font-family: 'Inter', monospace; 
+  font-weight: 600; 
+  color: var(--ink-3);
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+.kpi-delta.up { color: var(--emerald); }
+.kpi-delta.down { color: var(--crimson); }
+.kpi-delta.alert { color: var(--amber); }
+
+/* PILL */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 100px;
+  font-size: 11px; font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em; white-space: nowrap;
+}
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill-delivered, .pill-dispatched { background: rgba(16,185,129,0.12); color: var(--emerald); }
+.pill-transit   { background: rgba(59,130,246,0.12); color: var(--steel); }
+.pill-ready     { background: rgba(245,158,11,0.12); color: var(--amber); }
+.pill-production { background: rgba(139,92,246,0.12); color: var(--violet); }
+.pill-received  { background: rgba(100,116,139,0.12); color: var(--ink-3); }
+.pill-hold      { background: rgba(239,68,68,0.12); color: var(--crimson); }
+.pill-wo        { background: rgba(255,107,26,0.12); color: var(--forge); }
+.pill-paid      { background: rgba(16,185,129,0.12); color: var(--emerald); }
+.pill-due       { background: rgba(59,130,246,0.12); color: var(--steel); }
+.pill-overdue   { background: rgba(239,68,68,0.12); color: var(--crimson); }
+.pill-not-inv   { background: rgba(100,116,139,0.12); color: var(--ink-3); }
+.pill-forging   { background: rgba(245,158,11,0.12); color: var(--amber); }
+.pill-nonexe    { background: rgba(239,68,68,0.12); color: var(--crimson); }
+.pill-pending   { background: rgba(100,116,139,0.12); color: var(--ink-3); }
+
+/* SPLITS */
+.split-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+.split-row.equal { grid-template-columns: 1fr 1fr; }
+.split-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* CARDS */
+.card { background: var(--bg-card); border: 1px solid var(--line); border-radius: 8px; padding: 22px; box-shadow: var(--shadow); }
+.card-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.card-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-1); }
+.card-sub { font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+
+/* TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table thead th {
+  text-align: left; padding: 9px 12px;
+  font-size: 10px; font-weight: 700; color: var(--ink-4);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0,0,0,0.02);
+}
+.data-table tbody td {
+  padding: 11px 12px; border-bottom: 1px solid var(--line);
+  color: var(--ink-2); vertical-align: middle;
+}
+.data-table tbody tr:hover td { background: rgba(255,107,26,0.04); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table .mono { font-family: 'JetBrains Mono', monospace; }
+.data-table .right { text-align: right; }
+.data-table .strong { color: var(--ink-1); font-weight: 600; }
+.data-table .danger { color: var(--crimson); font-weight: 600; }
+.data-table .success { color: var(--emerald); font-weight: 600; }
+.data-table .warn { color: var(--amber); font-weight: 600; }
+.data-table .muted { color: var(--ink-4); }
+
+.scroll-table { max-height: 380px; overflow-y: auto; }
+.scroll-table::-webkit-scrollbar { width: 6px; }
+.scroll-table::-webkit-scrollbar-track { background: var(--bg-2); border-radius: 3px; }
+.scroll-table::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+
+/* ALERTS */
+.alert-stack { display: flex; flex-direction: column; gap: 9px; }
+.alert {
+  display: grid; grid-template-columns: 4px 1fr auto; gap: 14px; align-items: center;
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 11px 14px; font-size: 12px;
+}
+.alert-bar { width: 4px; height: 100%; min-height: 32px; border-radius: 2px; background: var(--alert-clr, var(--amber)); }
+.alert-critical { --alert-clr: var(--crimson); }
+.alert-warn { --alert-clr: var(--amber); }
+.alert-info { --alert-clr: var(--steel); }
+.alert-msg { display: flex; flex-direction: column; gap: 3px; }
+.alert-title { color: var(--ink-1); font-weight: 600; font-size: 12.5px; }
+.alert-detail { color: var(--ink-3); font-size: 11.5px; }
+.alert-action {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--forge);
+  font-weight: 600; padding: 5px 10px;
+  border: 1px solid var(--forge); border-radius: 4px;
+  cursor: pointer; background: transparent; transition: all 0.2s;
+}
+.alert-action:hover { background: var(--forge); color: white; }
+
+/* CHARTS */
+.chart-wrap { position: relative; height: 280px; width: 100%; }
+.chart-wrap.tall { height: 360px; }
+.chart-wrap.short { height: 180px; }
+
+/* TIMELINE */
+.timeline-row {
+  display: grid; grid-template-columns: 130px 80px 1fr 60px;
+  gap: 14px; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+.timeline-row:last-child { border-bottom: none; }
+.timeline-po { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ink-1); font-weight: 600; }
+.timeline-track { height: 8px; background: var(--bg-3); border-radius: 100px; position: relative; overflow: hidden; }
+.timeline-bar { position: absolute; height: 100%; border-radius: 100px;
+  background: linear-gradient(90deg, var(--steel) 0%, var(--violet) 100%); }
+.timeline-bar.delayed { background: linear-gradient(90deg, var(--crimson) 0%, #ff7a5c 100%); }
+.timeline-bar.complete { background: linear-gradient(90deg, var(--emerald) 0%, #5dd99a 100%); }
+.timeline-marker {
+  position: absolute; top: -3px; width: 14px; height: 14px;
+  border-radius: 50%; background: var(--bg-card); border: 2px solid var(--forge);
+}
+
+/* AGING */
+.aging-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.aging-bucket {
+  background: var(--bg-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 14px 14px 12px; border-top: 3px solid var(--accent);
+}
+.aging-bucket.b-1 { --accent: var(--steel); }
+.aging-bucket.b-2 { --accent: var(--amber); }
+.aging-bucket.b-3 { --accent: var(--forge); }
+.aging-bucket.b-4 { --accent: var(--crimson); }
+.aging-lbl { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; }
+.aging-val { font-family: 'Inter', monospace; font-size: 18px; font-weight: 600; color: var(--ink-1); margin-top: 6px; }
+.aging-amt { font-family: 'Inter', monospace; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+/* RING */
+.health-ring { display: flex; align-items: center; gap: 24px; }
+.ring-svg { width: 130px; height: 130px; }
+.health-meta { display: flex; flex-direction: column; gap: 6px; }
+.health-label { font-size: 10px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.14em; font-weight: 600; }
+.health-grade { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-1); }
+.health-msg { font-size: 12px; color: var(--ink-3); max-width: 200px; line-height: 1.5; }
+
+/* DEFS */
+.def-list { display: flex; flex-direction: column; gap: 12px; }
+.def-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.def-row:last-child { border-bottom: none; }
+.def-lbl { font-size: 14px; color: var(--ink-3); }
+.def-val { font-family: 'Inter', monospace; font-size: 16px; font-weight: 600; color: var(--ink-1); }
+.def-val.danger { color: var(--crimson); }
+.def-val.success { color: var(--emerald); }
+.def-val.amber { color: var(--amber); }
+
+/* PARETO */
+.pareto-row { display: grid; grid-template-columns: 140px 1fr 50px; gap: 12px; align-items: center; padding: 8px 0; }
+.pareto-lbl { font-size: 12px; color: var(--ink-2); }
+.pareto-track { height: 8px; background: var(--bg-3); border-radius: 100px; overflow: hidden; }
+.pareto-fill { height: 100%; background: linear-gradient(90deg, var(--forge) 0%, var(--forge-glow) 100%); border-radius: 100px; }
+.pareto-cnt { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-1); font-weight: 600; text-align: right; }
+
+/* PROGRESS BAR (line items) */
+.progress-cell { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+.progress-track { flex: 1; height: 6px; background: var(--bg-3); border-radius: 100px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--emerald) 0%, #5dd99a 100%); border-radius: 100px; }
+.progress-text { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-2); font-weight: 600; min-width: 32px; text-align: right; }
+
+/* FOOTER */
+.footer {
+  margin-top: 40px; padding: 24px 0; border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: var(--ink-4);
+  text-transform: uppercase; letter-spacing: 0.15em; font-weight: 600;
+}
+.footer .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em; }
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .kpi-value { font-size: 18px; }
+  .kpi-label { font-size: 8px; }
+  .kpi-card { padding: 8px 10px; }
+}
+@media (max-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 40px; }
+}
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 1000px) {
+  .main { padding: 20px; }
+  .topbar { padding: 12px 20px; flex-wrap: wrap; gap: 14px; }
+  .session-meta { display: none; }
+  .split-row, .split-row.equal, .split-row.three { grid-template-columns: 1fr; }
+  .aging-grid { grid-template-columns: repeat(2, 1fr); }
+  .timeline-row { grid-template-columns: 100px 60px 1fr 50px; gap: 8px; font-size: 11px; }
+  .hero h1 { font-size: 32px; }
+  .filter-search { min-width: 100%; margin-left: 0; margin-top: 8px; }
+}
+
+/* ENTRANCE */
+.fade-in { animation: fadeIn 0.6s ease-out both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.3s; }
+
+/* PRINT / PDF — flatten, expand all, hide interactivity */
+@media print {
+  body { background: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .topbar { position: static !important; background: white !important; }
+  .live-indicator { display: none; }
+  .filters-bar { display: none; }
+  .alert-action { display: none; }
+  .scroll-table { max-height: none !important; overflow: visible !important; }
+  .section { break-inside: avoid; }
+  .card { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+  .kpi-card { break-inside: avoid; box-shadow: none; }
+  .fade-in { animation: none !important; }
+}
+.pdf-mode body::before { position: absolute; }
+.pdf-mode .topbar { position: static !important; background: white !important; }
+.pdf-mode .live-indicator { display: none; }
+.pdf-mode .filters-bar { display: none; }
+.pdf-mode .alert-action { display: none; }
+.pdf-mode .scroll-table { max-height: none !important; overflow: visible !important; }
+
+/* Hide Line Item Register table card in PDF */
+.pdf-mode #lineItemRegisterCard { display: none !important; }
+
+/* Chart background fix for light mode */
+canvas {
+  background: var(--bg-1);
+}
+</style>
+</head>
+<body class="{{BODY_CLASS}}">
+
+<script>
+// Populate customer-meta only for fields that have values
+(function() {
+  var fields = [
+    { label: 'Category',     value: '{{CATEGORY}}' },
+    { label: 'Industry',     value: '{{INDUSTRY}}' },
+    { label: 'Plant',        value: '{{PLANT}}' },
+    { label: 'Active Since', value: '{{ACTIVE_SINCE}}' },
+  ];
+  document.addEventListener('DOMContentLoaded', function() {
+    var grid = document.getElementById('customerMetaGrid');
+    if (!grid) return;
+    var hasAny = false;
+    fields.forEach(function(f) {
+      if (!f.value || !f.value.trim()) return;
+      hasAny = true;
+      var div = document.createElement('div');
+      div.className = 'cm-item';
+      div.innerHTML = '<div class="cm-label">' + f.label + '</div><div class="cm-value">' + f.value + '</div>';
+      grid.appendChild(div);
+    });
+    // If no fields have values, hide the grid and its top border entirely
+    if (!hasAny) {
+      grid.style.display = 'none';
+    }
+  });
+})();
+</script>
+
+<div class="topbar">
+  <div class="brand">
+    <img src="{{COMPANY_LOGO}}" alt="{{COMPANY}}" style="height: 42px; width: auto; border-radius: 8px;">
+    <div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="session-meta">
+    <div class="session-item">
+      <div class="session-label">Customer</div>
+      <div class="session-value">{{CUSTOMER}}</div>
+    </div>
+    <div class="session-item">
+      <div class="session-label">KAM</div>
+      <div class="session-value">{{KAM}}</div>
+    </div>
+    <div class="session-item">
+      <div class="session-label">Report Date</div>
+      <div class="session-value" id="todayStr">--</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- HERO -->
+  <section class="hero fade-in">
+    <div class="hero-title-block">
+      <div class="eyebrow">{{PERIOD}}</div>
+      <h1>Forging <em>Forward.</em><br/>Delivering Trust.</h1>
+      <p class="hero-sub">{{HERO_SUB}}</p>
+    </div>
+    <div class="customer-card">
+      <div class="label">PRIMARY ACCOUNT</div>
+      <div class="name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{CUSTOMER_DISPLAY}}</div>
+      <div class="customer-meta" id="customerMetaGrid">
+      </div>
+    </div>
+  </section>
+
+  <!-- 01 EXECUTIVE SUMMARY -->
+  <section class="section fade-in delay-2">
+    <div class="section-header">
+      <span class="section-num">01 ·</span>
+      <h2 class="section-title">Executive Summary</h2>
+      <span class="section-sub">All KPIs auto-computed from PO + line-item data</span>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-forge">
+        <div class="kpi-label">Total Open Orders</div>
+        <div class="kpi-value" id="kpiOpen">--</div>
+        <div class="kpi-delta" id="kpiOpenSub">--</div>
+      </div>
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-label">Orders Delivered</div>
+        <div class="kpi-value" id="kpiDelivered">--</div>
+        <div class="kpi-delta up" id="kpiDeliveredSub">--</div>
+      </div>
+      <div class="kpi-card kpi-crimson">
+        <div class="kpi-label">Delayed Orders</div>
+        <div class="kpi-value" id="kpiDelayed">--</div>
+        <div class="kpi-delta down" id="kpiDelayedSub">--</div>
+      </div>
+      <div class="kpi-card kpi-steel">
+        <div class="kpi-label">Payment Outstanding</div>
+        <div class="kpi-value" id="kpiOut">--</div>
+        <div class="kpi-delta down" id="kpiOutSub">--</div>
+      </div>
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-label">NPS · CSAT</div>
+        <div class="kpi-value" id="kpiNps">--</div>
+        <div class="kpi-delta up" id="kpiNpsSub">--</div>
+      </div>
+    </div>
+  </section>
+
+    <!-- 02 ORDER TRACKING -->
+  <section class="section fade-in delay-3">
+    <div class="section-header">
+      <span class="section-num">02 ·</span>
+      <h2 class="section-title">Order Tracking Dashboard</h2>
+      <span class="section-sub">PO status · dispatch · delays · aging</span>
+    </div>
+
+    <!-- Row 1: Order Aging Analysis + Delayed Shipment Alerts -->
+    <div class="split-row equal" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Order Aging Analysis</div>
+          <div class="card-sub">Active POs by age bucket</div>
+        </div>
+        <div class="aging-grid" id="agingGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Delayed Shipment Alerts</div>
+          <div class="card-sub" id="delayedCount">--</div>
+        </div>
+        <div class="alert-stack" id="delayedAlerts"></div>
+      </div>
+    </div>
+
+    <!-- Row 2: Dispatch Performance Trend + Status Distribution -->
+    <div class="split-row equal" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Dispatch Performance</div>
+          <div class="card-sub">Days vs EDD (+ = late)</div>
+        </div>
+        <div class="chart-wrap"><canvas id="dispatchChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Status Distribution</div>
+          <div class="card-sub">Live mix</div>
+        </div>
+        <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 3: Active PO Lifecycle + On-Time Dispatch Trend -->
+    <div class="split-row" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Active PO Lifecycle</div>
+          <div class="card-sub">PO date → EDD timeline</div>
+        </div>
+        <div id="timelineHost"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">On-Time Dispatch Trend</div>
+          <div class="card-sub">Historical · monthly</div>
+        </div>
+        <div class="chart-wrap"><canvas id="onTimeChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 ITEM-LEVEL EXECUTION -->
+  <section class="section fade-in delay-4">
+    <div class="section-header">
+      <span class="section-num">03 ·</span>
+      <h2 class="section-title">Item-Level Execution</h2>
+      <span class="section-sub">Production line items · materials · dispatch</span>
+    </div>
+
+    <div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 20px;">
+      <div class="kpi-card kpi-forge">
+        <div class="kpi-label">Total Line Items</div>
+        <div class="kpi-value" id="itemTotal">--</div>
+        <div class="kpi-delta" id="itemTotalSub">--</div>
+      </div>
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-label">Items Dispatched</div>
+        <div class="kpi-value" id="itemDispatched">--</div>
+        <div class="kpi-delta up" id="itemDispatchedSub">--</div>
+      </div>
+      <div class="kpi-card kpi-violet">
+        <div class="kpi-label">In Production</div>
+        <div class="kpi-value" id="itemProd">--</div>
+        <div class="kpi-delta" id="itemProdSub">--</div>
+      </div>
+      <div class="kpi-card kpi-crimson">
+        <div class="kpi-label">Hold PO</div>
+        <div class="kpi-value" id="itemNonExe">--</div>
+      </div>
+      <div class="kpi-card kpi-steel">
+        <div class="kpi-label">Item Value</div>
+        <div class="kpi-value" id="itemValue">--</div>
+        <div class="kpi-delta up" id="itemValueSub">--</div>
+      </div>
+    </div>
+
+    <!-- Split row: Dispatch Volume chart on left, Item Summary on right -->
+    <div class="split-row equal" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Dispatch Volume · By Month</div>
+          <div class="card-sub">Items dispatched</div>
+        </div>
+        <div class="chart-wrap"><canvas id="dispatchVolChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Item Summary</div>
+          <div class="card-sub">{{ITEM_COUNT}} total line items</div>
+        </div>
+        <div class="def-list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <div class="def-row"><div class="def-lbl">Total Items</div><div class="def-val" id="itemTotalSummary">--</div></div>
+          <div class="def-row"><div class="def-lbl">Dispatched</div><div class="def-val success" id="itemDispatchedSummary">--</div></div>
+          <div class="def-row"><div class="def-lbl">In Production</div><div class="def-val" id="itemProdSummary">--</div></div>
+          <div class="def-row"><div class="def-lbl">PO Hold</div><div class="def-val danger" id="itemNonExeSummary">--</div></div>
+          <div class="def-row"><div class="def-lbl">Total Value</div><div class="def-val amber" id="itemValueSummary">--</div></div>
+          <div class="def-row"><div class="def-lbl">Completion Rate</div><div class="def-val success" id="itemCompletionSummary">--</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 COMPLAINT MANAGEMENT - HIDDEN IN PDF -->
+  <section class="section fade-in delay-4 complaint-section" id="complaintSection" style="display: none !important;">
+    <div class="section-header">
+      <span class="section-num">04 ·</span>
+      <h2 class="section-title">Complaint Management</h2>
+      <span class="section-sub">Open / closed · TAT · RCA · SLA</span>
+    </div>
+
+    <div class="split-row three" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Open vs Closed</div>
+          <div class="card-sub">Live state</div>
+        </div>
+        <div class="chart-wrap short"><canvas id="complaintMixChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Avg TAT (Days)</div>
+          <div class="card-sub">Resolution speed</div>
+        </div>
+        <div class="health-ring" style="justify-content: center; padding: 20px 0;">
+          <svg class="ring-svg" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(0,0,0,0.06)" stroke-width="11"/>
+            <circle id="tatRing" cx="65" cy="65" r="55" fill="none" stroke="url(#tatGrad)" stroke-width="11" stroke-linecap="round" stroke-dasharray="345.6" stroke-dashoffset="170" transform="rotate(-90 65 65)"/>
+            <defs>
+              <linearGradient id="tatGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ff6b1a"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+            </defs>
+            <text x="65" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="22" font-weight="700" fill="#0f172a" id="tatNum">--</text>
+            <text x="65" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="9" font-weight="600" fill="#64748b">DAYS · AVG</text>
+          </svg>
+          <div class="health-meta">
+            <div class="health-label">SLA Target</div>
+            <div class="health-grade" style="color: var(--amber);">5 days</div>
+            <div class="health-msg" id="tatMsg">--</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">SLA Breach Alerts</div>
+          <div class="card-sub" id="slaCount">--</div>
+        </div>
+        <div class="alert-stack" id="slaAlerts"></div>
+      </div>
+    </div>
+
+    <div class="split-row equal">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Root Cause Analysis · Pareto</div>
+          <div class="card-sub">Complaint categories</div>
+        </div>
+        <div id="paretoHost"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Complaint Register</div>
+          <div class="card-sub">All active</div>
+        </div>
+        <div class="scroll-table">
+          <table class="data-table">
+            <thead>
+              <tr><th>ID</th><th>PO</th><th>Type</th><th>Status</th><th class="right">TAT</th></tr>
+            </thead>
+            <tbody id="complaintTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 VOC -->
+  <section class="section fade-in delay-5">
+    <div class="section-header">
+      <span class="section-num">05 ·</span>
+      <h2 class="section-title">Customer Feedback & Voice of Customer</h2>
+      <span class="section-sub">NPS · CSAT</span>
+    </div>
+
+    <div class="split-row" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">NPS & CSAT Trend</div>
+          <div class="card-sub">Last 6 surveys</div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="npsChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Net Promoter Distribution</div>
+          <div class="card-sub">Promoters · Passives · Detractors</div>
+        </div>
+        <div class="chart-wrap tall"><canvas id="npsDistChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 COLLECTIONS -->
+  <section class="section fade-in delay-5">
+    <div class="section-header">
+      <span class="section-num">06 ·</span>
+      <h2 class="section-title">Collection & Payment Dashboard</h2>
+      <span class="section-sub">Outstanding · aging · follow-up</span>
+    </div>
+
+    <div class="split-row" style="margin-bottom: 20px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Receivables Aging</div>
+          <div class="card-sub">Outstanding by bucket</div>
+        </div>
+        <div class="chart-wrap"><canvas id="agingChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Collection Summary</div>
+          <div class="card-sub">Live snapshot</div>
+        </div>
+        <div class="def-list">
+          <div class="def-row"><div class="def-lbl">Total Outstanding</div><div class="def-val amber" id="collOut">--</div></div>
+          <div class="def-row"><div class="def-lbl">Overdue Amount</div><div class="def-val danger" id="collOverdue">--</div></div>
+          <div class="def-row"><div class="def-lbl">Due (within terms)</div><div class="def-val" id="collDue">--</div></div>
+          <div class="def-row"><div class="def-lbl">Paid Invoices</div><div class="def-val success" id="collPaid">--</div></div>
+          <div class="def-row"><div class="def-lbl">Avg Days Overdue</div><div class="def-val amber" id="collDSO">--</div></div>
+          <div class="def-row"><div class="def-lbl">Largest Overdue PO</div><div class="def-val" id="collMax">--</div></div>
+          <div class="def-row" style="border-top:1px solid var(--line);padding-top:10px;margin-top:4px"><div class="def-lbl">Payment Received (from POs)</div><div class="def-val success" id="collPayRecv">--</div></div>
+          <div class="def-row"><div class="def-lbl">POs with Payment Received</div><div class="def-val success" id="collPayCount">--</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAYMENT REGISTER CARD -->
+  <section class="section fade-in delay-5" id="paymentRegisterSection">
+    <div class="section-header">
+      <span class="section-num">06b ·</span>
+      <h2 class="section-title">Payment Register</h2>
+      <span class="section-sub">Received payments from PO Approval sheet</span>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">PO-wise Payment Received</div>
+        <div class="card-sub" id="payRegCount">--</div>
+      </div>
+      <div class="scroll-table">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>PO Number</th>
+              <th>PO Date</th>
+              <th>PO Value (₹)</th>
+              <th>Approval Status</th>
+              <th>Payment Received Date</th>
+              <th class="right">Payment Received (₹)</th>
+              <th class="right">Balance (₹)</th>
+            </tr>
+          </thead>
+          <tbody id="payRegTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div>{{COMPANY}} · CONFIDENTIAL</div>
+    <div class="mono">Built for {{CUSTOMER_SHORT}} · Generated {{GEN_DATE}}</div>
+  </div>
+
+</div>
+
+<script>
+// DATA 
+const DATA = {{DATA_JSON}};
+const TODAY = new Date(DATA.today);
+
+// FORMATTERS 
+const inr = n => '₹' + (n||0).toLocaleString('en-IN', {maximumFractionDigits:0});
+const inrLac = n => (n/100000).toFixed(2) + 'L';
+const fmtDate = s => { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short'}); };
+const fmtDateFull = s => { if (!s) return '—'; const d = new Date(s); return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'2-digit'}); };
+
+// Today display
+document.getElementById('todayStr').textContent = TODAY.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+
+// METRICS 
+const M = (function() {
+  const active = DATA.active, hist = DATA.hist, items = DATA.items || [];
+  const openOrders = active.filter(a => a.status !== 'Delivered').length;
+  const delivered = hist.filter(h => h.delivered === 'Yes').length;
+  const delayed = active.filter(a => a.is_delayed).length;
+  const onHold = active.filter(a => a.status === 'On Hold').length;
+  const onTimePct = (() => {
+    const c = hist.filter(h => h.on_time !== null);
+    if (!c.length) return 0;
+    return c.filter(h => h.on_time).length / c.length;
+  })();
+  const outstanding = hist.filter(h => ['Due','Overdue'].includes(h.pay_status)).reduce((s,h)=>s+h.inv_value,0);
+  const overdueAmt = hist.filter(h => h.pay_status==='Overdue').reduce((s,h)=>s+h.inv_value,0);
+  const dueAmt = hist.filter(h => h.pay_status==='Due').reduce((s,h)=>s+h.inv_value,0);
+  const paidCount = hist.filter(h => h.pay_status==='Paid').length;
+  const overdueCount = hist.filter(h => h.pay_status==='Overdue').length;
+  const dueCount = hist.filter(h => h.pay_status==='Due').length;
+  const avgAging = (() => {
+    const arr = hist.filter(h => h.pay_status==='Overdue').map(h=>h.aging);
+    return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+  })();
+  const maxOverdue = hist.filter(h => h.pay_status==='Overdue').sort((a,b)=>b.inv_value-a.inv_value)[0];
+  const totalActiveValue = active.reduce((s,a)=>s+a.value,0);
+
+  // Items
+  const totalItems = items.length;
+  const dispItems = items.filter(i => i.status === 'Dispatched').length;
+  const prodItems = items.filter(i => ['In Production','Forging Complete','Ready'].includes(i.status)).length;
+  const nonExeItems = items.filter(i => i.status === 'Non-Executable').length;
+  const itemValue = items.reduce((s,i)=>s+i.value,0);
+
+  return {
+    openOrders, delivered, delayed, onHold, onTimePct,
+    outstanding, overdueAmt, dueAmt, paidCount, overdueCount, dueCount, avgAging,
+    maxOverdue, totalActiveValue,
+    totalItems, dispItems, prodItems, nonExeItems, itemValue,
+  };
+})();
+
+// CXM DATA 
+const COMPLAINTS = [
+  { id: 'CMP-2026-2001', po: 'ME25261146', type: 'Dimensional NC', status: 'Closed',     tat: 4, sla: 'No',  rca: 'Process', owner: 'Quality - V.Joshi' },
+  { id: 'CMP-2026-2002', po: 'ME25261198', type: 'Surface Defect', status: 'Closed',     tat: 6, sla: 'Yes', rca: 'Material', owner: 'Production - A.Khan' },
+  { id: 'CMP-2026-2003', po: 'ME25261176', type: 'Delivery Delay', status: 'Closed',     tat: 3, sla: 'No',  rca: 'Logistics', owner: 'Logistics - R.Sharma' },
+  { id: 'CMP-2026-2004', po: 'ME25261167', type: 'Documentation',  status: 'Closed',     tat: 2, sla: 'No',  rca: 'Process', owner: 'CRM - S.Banerjee' },
+  { id: 'CMP-2026-2005', po: 'ME26270014', type: 'Hardness Dev.',  status: 'Open',        tat: 6, sla: 'Yes', rca: 'Process', owner: 'Quality - V.Joshi' },
+  { id: 'CMP-2026-2006', po: 'GE0023',     type: 'Packing Damage', status: 'In Progress', tat: 3, sla: 'No',  rca: 'Logistics', owner: 'Logistics - R.Sharma' },
+  { id: 'CMP-2026-2007', po: 'ME25261795', type: 'Surface Defect', status: 'Open',        tat: 5, sla: 'Yes', rca: 'Material', owner: 'Quality - V.Joshi' },
+  { id: 'CMP-2026-2008', po: 'ME26270075', type: 'Dimensional NC', status: 'In Progress', tat: 2, sla: 'No',  rca: 'Process', owner: 'Production - A.Khan' },
+];
+
+// NPS/CSAT DATA FROM EXCEL
+const FEEDBACK_DATA = DATA.feedback_data || { feedback: [], nps_score: 0, csat_score: 0, total_responses: 0, promoters: 0, passives: 0, detractors: 0 };
+const FEEDBACK = FEEDBACK_DATA.feedback || [];
+
+// EXEC KPIs 
+document.getElementById('kpiOpen').innerHTML = M.openOrders + '<span class="unit"> POs</span>';
+document.getElementById('kpiOpenSub').textContent = inrLac(M.totalActiveValue) + ' · pending dispatch';
+document.getElementById('kpiDelivered').innerHTML = M.delivered + '<span class="unit"> POs</span>';
+document.getElementById('kpiDeliveredSub').innerHTML = '▲ ' + Math.round(M.onTimePct*100) + '% on-time rate';
+document.getElementById('kpiDelayed').textContent = M.delayed;
+document.getElementById('kpiDelayedSub').innerHTML = '▼ ' + M.onHold + ' on hold ';
+const openComplaints = COMPLAINTS.filter(c => c.status !== 'Closed').length;
+const breaches = COMPLAINTS.filter(c => c.sla==='Yes' && c.status!=='Closed').length;
+document.getElementById('kpiOut').innerHTML = '₹ ' + (M.outstanding/100000).toFixed(1) + '<span class="unit">L</span>';
+document.getElementById('kpiOutSub').innerHTML = '⚠ ₹' + (M.overdueAmt/100000).toFixed(1) + 'L overdue';
+// NPS Display with fallback indicator
+const npsValue = FEEDBACK_DATA.nps_score;
+const csatValue = FEEDBACK_DATA.csat_score;
+const promotersCount = FEEDBACK_DATA.promoters || 0;
+const totalResponses = FEEDBACK_DATA.total_responses || 0;
+const showingFallback = FEEDBACK_DATA.showing_overall_fallback || false;
+
+if (totalResponses > 0) {
+    document.getElementById('kpiNps').innerHTML = (npsValue >= 0 ? '+' : '') + npsValue + '<span class="unit"> · ' + csatValue + '%</span>';
+    let subText = '▲ ' + promotersCount + ' promoters · ' + totalResponses + '%';
+    if (showingFallback) {
+        subText = subText;
+    }
+    document.getElementById('kpiNpsSub').innerHTML = subText;
+} else {
+    document.getElementById('kpiNps').innerHTML = '--<span class="unit"> · --</span>';
+    document.getElementById('kpiNpsSub').innerHTML = 'No survey data available';
+}
+
+// ITEM KPIs 
+document.getElementById('itemTotal').textContent = M.totalItems;
+document.getElementById('itemTotalSub').textContent = 'Across ' + new Set(DATA.items.map(i=>i.po)).size + ' POs';
+document.getElementById('itemDispatched').textContent = M.dispItems;
+document.getElementById('itemDispatchedSub').innerHTML = '▲ ' + Math.round(M.dispItems/M.totalItems*100) + '% of items';
+document.getElementById('itemProd').textContent = M.prodItems;
+document.getElementById('itemProdSub').textContent = 'forging + ready stage';
+document.getElementById('itemNonExe').textContent = M.nonExeItems;
+document.getElementById('itemValue').innerHTML = '₹ ' + (M.itemValue/10000000).toFixed(2) + '<span class="unit">Cr</span>';
+document.getElementById('itemValueSub').textContent = 'across all line items';
+
+// TIMELINE 
+const timelineHost = document.getElementById('timelineHost');
+const today = TODAY;
+const activeSorted = DATA.active.slice().sort((a,b) => new Date(a.po_date) - new Date(b.po_date)).slice(0, 8);
+const allDates = activeSorted.flatMap(a => [new Date(a.po_date), new Date(a.edd)].filter(d => !isNaN(d)));
+const minD = new Date(Math.min.apply(null, allDates));
+const maxD = new Date(Math.max.apply(null, [...allDates, today]));
+const span = (maxD - minD) || 1;
+activeSorted.forEach(po => {
+  const start = new Date(po.po_date);
+  const end = po.edd ? new Date(po.edd) : today;
+  const leftPct = ((start - minD) / span) * 100;
+  const widthPct = ((end - start) / span) * 100;
+  const todayPct = ((today - minD) / span) * 100;
+  const cls = po.is_delayed ? 'delayed' : (po.status === 'Delivered' ? 'complete' : '');
+  const row = document.createElement('div');
+  row.className = 'timeline-row';
+  row.innerHTML = `
+    <div class="timeline-po">${po.po_no}</div>
+    <div><span class="pill pill-${statusToPillClass(po.status)}">${po.status}</span></div>
+    <div class="timeline-track">
+      <div class="timeline-bar ${cls}" style="left:${leftPct}%;width:${widthPct}%"></div>
+      <div class="timeline-marker" style="left:calc(${todayPct}% - 7px); top:-3px;" title="TODAY"></div>
+    </div>
+    <div style="text-align:right;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:11px;color:var(--ink-1)">${po.value_lac.toFixed(1)}L</div>
+  `;
+  timelineHost.appendChild(row);
+});
+
+function statusToPillClass(s) {
+  return ({
+    'Delivered':'delivered','In Transit':'transit','Ready to Dispatch':'ready',
+    'In Production':'production','PO Received':'received','On Hold':'hold',
+    'WO Released':'wo','Invoiced':'transit','Pending':'pending',
+    'Dispatched':'dispatched','Forging Complete':'forging','Ready':'ready',
+    'Non-Executable':'nonexe',
+  })[s] || 'received';
+}
+
+// CHART SETUP 
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'Inter Tight', sans-serif";
+Chart.defaults.font.size = 11;
+
+const STATUS_COLORS = {
+  'Delivered':'#10b981','In Transit':'#3b82f6','Ready to Dispatch':'#f59e0b',
+  'In Production':'#8b5cf6','PO Received':'#64748b','On Hold':'#ef4444',
+  'WO Released':'#ff6b1a',
+};
+
+// STATUS PIE 
+const statusCounts = {};
+DATA.active.forEach(a => { statusCounts[a.status] = (statusCounts[a.status]||0) + 1; });
+const sLabels = Object.keys(statusCounts);
+const sColors = sLabels.map(s => STATUS_COLORS[s] || '#64748b');
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: { labels: sLabels, datasets: [{
+    data: Object.values(statusCounts),
+    backgroundColor: sColors, borderColor: '#ffffff', borderWidth: 3, hoverOffset: 8,
+  }] },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: {
+      legend: { position: 'bottom', labels: { padding: 12, usePointStyle: true, font: { size: 11, weight: '600' } } },
+      tooltip: { backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, bodyColor: '#334155', titleColor: '#0f172a' }
+    }, animation: { duration: 800 },
+  },
+});
+
+// DELAYED ALERTS 
+const delAlerts = document.getElementById('delayedAlerts');
+const delayedPOs = DATA.active.filter(a => a.is_delayed).sort((a,b)=>b.delay_days-a.delay_days);
+document.getElementById('delayedCount').textContent = delayedPOs.length;
+if (!delayedPOs.length) {
+  delAlerts.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-3)">No delayed orders - on track.</div>';
+} else {
+  delayedPOs.slice(0,6).forEach(po => {
+    const sev = po.delay_days > 5 ? 'critical' : 'warn';
+    const div = document.createElement('div');
+    div.className = 'alert alert-' + sev;
+    div.innerHTML = `
+      <div class="alert-bar"></div>
+      <div class="alert-msg">
+        <div class="alert-title">${po.po_no} · ${po.delay_days} day${po.delay_days>1?'s':''} past EDD</div>
+        <div class="alert-detail">EDD: ${fmtDateFull(po.edd)} · ${po.status} · ${po.value_lac.toFixed(1)}L</div>
+      </div>
+    `;
+    delAlerts.appendChild(div);
+  });
+}
+
+// ON-TIME TREND 
+const otBuckets = {};
+DATA.hist.forEach(h => {
+  if (!h.po_date || h.on_time === null) return;
+  const k = h.po_date.substring(0,7);
+  if (!otBuckets[k]) otBuckets[k] = { on:0, late:0 };
+  if (h.on_time) otBuckets[k].on++; else otBuckets[k].late++;
+});
+const sortedMonths = Object.keys(otBuckets).sort();
+const monthLabels = sortedMonths.map(m => {
+  const [y,mo] = m.split('-');
+  return new Date(y,+mo-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'});
+});
+const onTimePcts = sortedMonths.map(m => {
+  const b = otBuckets[m];
+  return Math.round(b.on / (b.on+b.late) * 100);
+});
+new Chart(document.getElementById('onTimeChart'), {
+  type: 'line',
+  data: { labels: monthLabels, datasets: [{
+    label: 'On-Time %', data: onTimePcts,
+    borderColor: '#10b981',
+    backgroundColor: ctx => {
+      const g = ctx.chart.ctx.createLinearGradient(0,0,0,250);
+      g.addColorStop(0, 'rgba(16,185,129,0.2)'); g.addColorStop(1, 'rgba(16,185,129,0)');
+      return g;
+    },
+    fill: true, tension: 0.35, pointRadius: 5, pointHoverRadius: 7,
+    pointBackgroundColor: '#10b981', pointBorderColor: '#ffffff', pointBorderWidth: 2, borderWidth: 2.5,
+  }] },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: {
+      y: { beginAtZero: false, suggestedMin: 50, suggestedMax: 100, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { callback: v => v + '%' } },
+      x: { grid: { display: false } },
+    },
+    plugins: { legend: { display: false },
+      tooltip: { backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderWidth: 1, padding: 12, bodyColor: '#334155', titleColor: '#0f172a',
+                 callbacks: { label: c => 'On-time: ' + c.parsed.y + '%' } } },
+  },
+});
+
+// AGING 
+const agingGrid = document.getElementById('agingGrid');
+const ageBuckets = [
+  { name: '0–15 DAYS', cls: 'b-1', filter: a => a.age_days <= 15 },
+  { name: '16–30 DAYS', cls: 'b-2', filter: a => a.age_days > 15 && a.age_days <= 30 },
+  { name: '31–45 DAYS', cls: 'b-3', filter: a => a.age_days > 30 && a.age_days <= 45 },
+  { name: '45+ DAYS', cls: 'b-4', filter: a => a.age_days > 45 },
+];
+ageBuckets.forEach(b => {
+  const items = DATA.active.filter(b.filter);
+  const cnt = items.length;
+  const val = items.reduce((s,a)=>s+a.value,0);
+  const div = document.createElement('div');
+  div.className = 'aging-bucket ' + b.cls;
+  div.innerHTML = `
+    <div class="aging-lbl">${b.name}</div>
+    <div class="aging-val">${cnt} <span style="font-size:11px;color:var(--ink-3);font-weight:500">POs</span></div>
+    <div class="aging-amt">${inrLac(val)}</div>
+  `;
+  agingGrid.appendChild(div);
+});
+
+// DISPATCH PERFORMANCE SCATTER 
+const dispatchData = DATA.hist
+  .filter(h => h.delivered === 'Yes' && h.delay_days >= -30 && h.delay_days <= 30 && h.po_date)
+  .map(h => ({ x: new Date(h.po_date).getTime(), y: h.delay_days, po: h.po_no }))
+  .sort((a,b) => a.x - b.x);
+new Chart(document.getElementById('dispatchChart'), {
+  type: 'scatter',
+  data: { datasets: [{
+    label: 'Delay vs EDD (days)',
+    data: dispatchData.map((d,i) => ({ x: i, y: d.y, po: d.po, dt: new Date(d.x) })),
+    backgroundColor: dispatchData.map(d => d.y > 0 ? 'rgba(239,68,68,0.7)' : 'rgba(16,185,129,0.7)'),
+    borderColor: dispatchData.map(d => d.y > 0 ? '#ef4444' : '#10b981'),
+    pointRadius: 6, pointHoverRadius: 9, borderWidth: 1.5,
+  }] },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: {
+      x: { type: 'linear', grid: { display: false }, ticks: { display: false },
+           title: { display: true, text: 'PO Date (chronological →)', color: '#64748b' } },
+      y: { grid: { color: 'rgba(0,0,0,0.05)' },
+           title: { display: true, text: 'Days vs EDD  (+ = late)', color: '#64748b' } },
+    },
+    plugins: { legend: { display: false },
+      tooltip: { 
+        backgroundColor: '#ffffff', 
+        borderColor: '#e2e8f0', 
+        borderWidth: 1, 
+        padding: 12,
+        bodyColor: '#334155',
+        titleColor: '#0f172a',
+        callbacks: {
+          title: c => c[0].raw.po,
+          label: c => {
+            const d = c.raw.dt.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+            return d + ' · ' + (c.parsed.y > 0 ? c.parsed.y + ' days LATE' : Math.abs(c.parsed.y) + ' days early/on-time');
+          }
+        } 
+      } 
+    },
+  },
+});
+
+// ITEM SECTION CHARTS 
+const dispBuckets = {};
+DATA.items.forEach(i => {
+  if (i.dispatch_date) {
+    const k = i.dispatch_date.substring(0,7);
+    dispBuckets[k] = (dispBuckets[k]||0)+1;
+  }
+});
+const dispSorted = Object.keys(dispBuckets).sort();
+new Chart(document.getElementById('dispatchVolChart'), {
+  type: 'bar',
+  data: {
+    labels: dispSorted.map(m => { const [y,mo]=m.split('-'); return new Date(y,+mo-1,1).toLocaleDateString('en-GB',{month:'short',year:'2-digit'}); }),
+    datasets: [{
+      data: dispSorted.map(m => dispBuckets[m]),
+      backgroundColor: ctx => {
+        const g = ctx.chart.ctx.createLinearGradient(0,0,0,250);
+        g.addColorStop(0, '#ff6b1a'); g.addColorStop(1, 'rgba(255,107,26,0.2)');
+        return g;
+      },
+      borderRadius: 6, borderSkipped: false,
+    }] },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { x: { grid: { display: false } },
+              y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { stepSize: 5 } } },
+    plugins: { legend: { display: false },
+      tooltip: { 
+        backgroundColor: '#ffffff', 
+        borderColor: '#e2e8f0', 
+        borderWidth: 1, 
+        padding: 12,
+        bodyColor: '#334155',
+        titleColor: '#0f172a',
+        callbacks: { label: c => c.parsed.y + ' items dispatched' } 
+      } 
+    },
+  },
+});
+
+// ITEM SUMMARY CARD 
+if (document.getElementById('itemTotalSummary')) {
+    document.getElementById('itemTotalSummary').textContent = M.totalItems;
+    document.getElementById('itemDispatchedSummary').innerHTML = M.dispItems + ' <span style="font-size:11px">(' + Math.round(M.dispItems/M.totalItems*100) + '%)</span>';
+    document.getElementById('itemProdSummary').innerHTML = M.prodItems;
+    document.getElementById('itemNonExeSummary').innerHTML = M.nonExeItems;
+    document.getElementById('itemValueSummary').innerHTML = '₹' + (M.itemValue/10000000).toFixed(2) + 'Cr';
+    const completionRate = Math.round((M.dispItems / M.totalItems) * 100);
+    document.getElementById('itemCompletionSummary').innerHTML = completionRate + '%';
+}
+
+// COMPLAINT MIX 
+const cmpOpen = COMPLAINTS.filter(c => c.status === 'Open').length;
+const cmpProg = COMPLAINTS.filter(c => c.status === 'In Progress').length;
+const cmpClosed = COMPLAINTS.filter(c => c.status === 'Closed').length;
+new Chart(document.getElementById('complaintMixChart'), {
+  type: 'doughnut',
+  data: { labels: ['Open','In Progress','Closed'], datasets: [{
+    data: [cmpOpen, cmpProg, cmpClosed],
+    backgroundColor: ['#ef4444','#f59e0b','#10b981'],
+    borderColor: '#ffffff', borderWidth: 3, hoverOffset: 6,
+  }] },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '72%',
+    plugins: { legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, font: { size: 11 } } },
+               tooltip: { backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderWidth: 1, padding: 10, bodyColor: '#334155', titleColor: '#0f172a' } } },
+});
+
+// TAT
+const avgTat = (COMPLAINTS.filter(c => c.status === 'Closed').reduce((s,c)=>s+c.tat,0) / Math.max(1, cmpClosed)).toFixed(1);
+document.getElementById('tatNum').textContent = avgTat;
+document.getElementById('tatRing').setAttribute('stroke-dashoffset', 345.6 - 345.6 * Math.min(1, avgTat / 10));
+document.getElementById('tatMsg').textContent = avgTat > 5 ? 'Above 5-day SLA — investigate root causes.' : 'Within 5-day SLA target.';
+
+// SLA alerts
+const slaList = document.getElementById('slaAlerts');
+const slaBreaches = COMPLAINTS.filter(c => c.sla==='Yes' && c.status!=='Closed');
+document.getElementById('slaCount').textContent = slaBreaches.length + ' active · escalate to Sr. Mgmt';
+if (!slaBreaches.length) {
+  slaList.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink-3)">No breaches — all within SLA.</div>';
+} else {
+  slaBreaches.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'alert alert-critical';
+    div.innerHTML = `
+      <div class="alert-bar"></div>
+      <div class="alert-msg">
+        <div class="alert-title">${c.id} · ${c.type}</div>
+        <div class="alert-detail">PO ${c.po} · ${c.tat}d open · ${c.owner}</div>
+      </div>
+      <button class="alert-action">ESCALATE</button>
+    `;
+    slaList.appendChild(div);
+  });
+}
+
+// Pareto
+const paretoHost = document.getElementById('paretoHost');
+const typeCounts = {};
+COMPLAINTS.forEach(c => typeCounts[c.type] = (typeCounts[c.type]||0)+1);
+const pSorted = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+const maxC = Math.max(...pSorted.map(e=>e[1]));
+pSorted.forEach(([k,v]) => {
+  const row = document.createElement('div');
+  row.className = 'pareto-row';
+  row.innerHTML = `
+    <div class="pareto-lbl">${k}</div>
+    <div class="pareto-track"><div class="pareto-fill" style="width:${v/maxC*100}%"></div></div>
+    <div class="pareto-cnt">${v}</div>
+  `;
+  paretoHost.appendChild(row);
+});
+
+// Complaint table
+const cmpTable = document.getElementById('complaintTable');
+COMPLAINTS.forEach(c => {
+  const tr = document.createElement('tr');
+  const cls = c.status==='Closed'?'success':(c.status==='Open'?'danger':'warn');
+  tr.innerHTML = `
+    <td class="mono strong">${c.id}</td><td class="mono">${c.po}</td>
+    <td>${c.type}</td><td class="${cls}">${c.status}</td>
+    <td class="right mono">${c.tat}d</td>
+  `;
+  cmpTable.appendChild(tr);
+});
+
+// NPS CHARTS 
+if (FEEDBACK.length > 0) {
+    new Chart(document.getElementById('npsChart'), {
+        type: 'bar',
+        data: { 
+            labels: FEEDBACK.map(f => f.date ? new Date(f.date).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : 'Survey'),
+            datasets: [
+                { 
+                    label: 'NPS Score', 
+                    data: FEEDBACK.map(f => f.nps),
+                    backgroundColor: FEEDBACK.map(f => f.nps >= 50 ? '#10b981' : f.nps >= 0 ? '#f59e0b' : '#ef4444'),
+                    borderRadius: 4, 
+                    yAxisID: 'y' 
+                },
+                { 
+                    type: 'line', 
+                    label: 'CSAT %', 
+                    data: FEEDBACK.map(f => f.csat),
+                    borderColor: '#ff6b1a', 
+                    backgroundColor: 'rgba(255,107,26,0.1)', 
+                    tension: 0.4,
+                    pointBackgroundColor: '#ff6b1a', 
+                    pointBorderColor: '#ffffff', 
+                    pointBorderWidth: 2,
+                    pointRadius: 5, 
+                    borderWidth: 2.5, 
+                    yAxisID: 'y1' 
+                }
+            ] 
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: { 
+                x: { grid: { display: false } }, 
+                y: { 
+                    min: -100, 
+                    max: 100, 
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    title: { display: true, text: 'NPS Score', color: '#64748b' }
+                },
+                y1: {
+                    position: 'right',
+                    min: 0,
+                    max: 100,
+                    grid: { display: false },
+                    title: { display: true, text: 'CSAT %', color: '#64748b' },
+                    ticks: { callback: v => v + '%' }
+                }
+            },
+            plugins: { 
+                legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } },
+                tooltip: { 
+                    backgroundColor: '#ffffff', 
+                    borderColor: '#e2e8f0', 
+                    borderWidth: 1, 
+                    padding: 12,
+                    bodyColor: '#334155',
+                    titleColor: '#0f172a',
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            let value = context.parsed.y;
+                            if (context.dataset.label === 'NPS Score') {
+                                return label + ': ' + (value >= 0 ? '+' : '') + value;
+                            }
+                            return label + ': ' + value + '%';
+                        }
+                    }
+                } 
+            } 
+        },
+    });
+} else {
+    const npsChartContainer = document.getElementById('npsChart').parentElement;
+    if (npsChartContainer) {
+        npsChartContainer.innerHTML = '<div style="text-align:center;padding:50px;color:var(--ink-3)">No NPS/CSAT survey data available for this customer</div>';
+    }
+}
+
+// NPS Distribution Chart
+if (FEEDBACK.length > 0) {
+    const totalPromoters = FEEDBACK.reduce((sum, f) => sum + (f.promoters || 0), 0);
+    const totalPassives = FEEDBACK.reduce((sum, f) => sum + (f.passives || 0), 0);
+    const totalDetractors = FEEDBACK.reduce((sum, f) => sum + (f.detractors || 0), 0);
+    
+    new Chart(document.getElementById('npsDistChart'), {
+        type: 'bar',
+        data: { 
+            labels: ['Promoters (9-10)', 'Passives (7-8)', 'Detractors (0-6)'],
+            datasets: [{ 
+                data: [totalPromoters, totalPassives, totalDetractors],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], 
+                borderRadius: 6, 
+                borderSkipped: false 
+            }] 
+        },
+        options: { 
+            indexAxis: 'y', 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: { 
+                x: { 
+                    grid: { color: 'rgba(0,0,0,0.05)' }, 
+                    ticks: { stepSize: 1 },
+                    title: { display: true, text: 'Number of Responses', color: '#64748b' }
+                },
+                y: { grid: { display: false }, ticks: { font: { weight: '600' } } } 
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: { 
+                    backgroundColor: '#ffffff', 
+                    borderColor: '#e2e8f0', 
+                    borderWidth: 1, 
+                    padding: 12,
+                    bodyColor: '#334155',
+                    titleColor: '#0f172a',
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.x + '% (' + 
+                                   Math.round((context.parsed.x / FEEDBACK_DATA.total_responses) * 100) + '%)';
+                        }
+                    }
+                }
+            } 
+        },
+    });
+} else {
+    const distChartContainer = document.getElementById('npsDistChart').parentElement;
+    if (distChartContainer) {
+        distChartContainer.innerHTML = '<div style="text-align:center;padding:50px;color:var(--ink-3)">No survey distribution data available</div>';
+    }
+}
+
+// PAYMENT RECEIVED (from active POs — columns L & M)
+const payRecvTotal = DATA.total_payment_received || 0;
+const payRecvCount = DATA.paid_pos_count || 0;
+document.getElementById('collPayRecv').textContent  = inr(payRecvTotal);
+document.getElementById('collPayCount').textContent = payRecvCount + ' PO' + (payRecvCount !== 1 ? 's' : '');
+
+// Payment Register Table
+const payRegTable = document.getElementById('payRegTable');
+const payRegCount = document.getElementById('payRegCount');
+const posWithPayment = DATA.active.filter(a => a.payment_received_date || a.payment_received_amount > 0);
+payRegCount.textContent = posWithPayment.length + ' record' + (posWithPayment.length !== 1 ? 's' : '');
+if (!posWithPayment.length) {
+  payRegTable.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-3)">No payment records found for this customer.</td></tr>';
+} else {
+  posWithPayment.forEach(po => {
+    const balance = po.value - po.payment_received_amount;
+    const balClass = balance > 0 ? 'warn' : (balance < 0 ? 'danger' : 'success');
+    const tr = document.createElement('tr');
+    tr.innerHTML = \`
+      <td class="mono strong">\${po.po_no}</td>
+      <td class="mono muted">\${fmtDateFull(po.po_date)}</td>
+      <td class="mono right">\${inr(po.value)}</td>
+      <td><span class="pill pill-\${statusToPillClass(po.approval || po.status)}" style="font-size:10px;">\${po.approval || po.status}</span></td>
+      <td class="mono \${po.payment_received_date ? 'success' : 'muted'}">\${po.payment_received_date ? fmtDateFull(po.payment_received_date) : '—'}</td>
+      <td class="mono right success">\${inr(po.payment_received_amount)}</td>
+      <td class="mono right \${balClass}">\${inr(balance)}</td>
+    \`;
+    payRegTable.appendChild(tr);
+  });
+  // Totals row
+  const totalVal    = posWithPayment.reduce((s,p) => s + p.value, 0);
+  const totalRecvd  = posWithPayment.reduce((s,p) => s + p.payment_received_amount, 0);
+  const totalBal    = totalVal - totalRecvd;
+  const tfooter = document.createElement('tr');
+  tfooter.style.cssText = 'background:var(--bg-2);font-weight:700;border-top:2px solid var(--line-strong)';
+  tfooter.innerHTML = \`
+    <td colspan="2" style="font-weight:700;color:var(--ink-1)">TOTAL</td>
+    <td class="mono right strong">\${inr(totalVal)}</td>
+    <td></td>
+    <td></td>
+    <td class="mono right success">\${inr(totalRecvd)}</td>
+    <td class="mono right \${totalBal > 0 ? 'warn' : 'success'}">\${inr(totalBal)}</td>
+  \`;
+  payRegTable.appendChild(tfooter);
+}
+
+// COLLECTIONS 
+document.getElementById('collOut').textContent = inr(M.outstanding);
+document.getElementById('collOverdue').textContent = inr(M.overdueAmt);
+document.getElementById('collDue').textContent = inr(M.dueAmt);
+document.getElementById('collPaid').textContent = M.paidCount + ' invoices';
+document.getElementById('collDSO').textContent = Math.round(M.avgAging) + ' days';
+document.getElementById('collMax').textContent = M.maxOverdue ? (M.maxOverdue.po_no + ' · ' + inr(M.maxOverdue.inv_value)) : '—';
+
+const agingData = [
+  { lbl: 'Due (0d)', val: M.dueAmt, color: '#3b82f6' },
+  { lbl: '1–30 d',    val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging<=30).reduce((s,h)=>s+h.inv_value,0), color: '#f59e0b' },
+  { lbl: '31–60 d',   val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging>30&&h.aging<=60).reduce((s,h)=>s+h.inv_value,0), color: '#ff6b1a' },
+  { lbl: '60+ d',     val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging>60).reduce((s,h)=>s+h.inv_value,0), color: '#ef4444' },
+];
+new Chart(document.getElementById('agingChart'), {
+  type: 'bar',
+  data: { labels: agingData.map(a=>a.lbl), datasets: [{
+    data: agingData.map(a=>a.val),
+    backgroundColor: agingData.map(a=>a.color), borderRadius: 6, borderSkipped: false }] },
+  options: { responsive: true, maintainAspectRatio: false,
+    scales: { x: { grid: { display: false } },
+              y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { callback: v => '₹' + (v/100000).toFixed(1) + 'L' } } },
+    plugins: { legend: { display: false },
+      tooltip: { backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderWidth: 1, padding: 12,
+        bodyColor: '#334155', titleColor: '#0f172a',
+        callbacks: { label: c => '₹' + c.parsed.y.toLocaleString('en-IN') } } } },
+});
+
+// Hide complaint section in PDF
+if (document.body.classList.contains('pdf-mode')) {
+  const complaintSection = document.querySelector('.section.fade-in.delay-4');
+  if (complaintSection && complaintSection.querySelector('.section-title:contains("Complaint Management")')) {
+    complaintSection.style.display = 'none';
+  }
+}
+
+// Set dashboard ready flag when all content is loaded
+function setDashboardReady() {
+    window.__DASHBOARD_READY__ = true;
+    console.log('Dashboard ready for PDF generation');
+}
+
+// Check if all charts are rendered
+function checkChartsReady() {
+    const canvases = document.querySelectorAll('canvas');
+    let allReady = true;
+    canvases.forEach(canvas => {
+        if (canvas.width === 0 || canvas.height === 0) {
+            allReady = false;
+        }
+    });
+    return allReady && canvases.length > 0;
+}
+
+// Set ready flag after a delay or when charts are ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            if (checkChartsReady()) {
+                setDashboardReady();
+            } else {
+                setTimeout(setDashboardReady, 3000);
+            }
+        }, 2000);
+    });
+} else {
+    setTimeout(function() {
+        if (checkChartsReady()) {
+            setDashboardReady();
+        } else {
+            setTimeout(setDashboardReady, 3000);
+        }
+    }, 2000);
+}
+</script>
+</body>
+</html>
