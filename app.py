@@ -380,8 +380,7 @@ def to_date_str(v) -> str:
 SHEET_SIGNATURES = {
     "active_po": {
         "must_have": ["PO DATE"],
-        "should_have": ["PO NO.", "Value", "PO Approval Status", "Person Name", "Status/ Wo No",
-                        "Payment Received Date", "Payment received amount"],
+        "should_have": ["PO NO.", "Value", "PO Approval Status", "Person Name", "Status/ Wo No"],
     },
     "dispatch": {
         "must_have": ["PO Number", "PO Date"],
@@ -524,8 +523,6 @@ def build_active_pos(df, customer_filter, today):
         is_delayed = False; delay_days = 0
         if pd.notna(edd) and edd < today and status not in ("Delivered", "On Hold"):
             delay_days = (today - edd).days; is_delayed = True
-        pay_recv_date = to_date_str(r.get("Payment Received Date"))
-        pay_recv_amt  = to_num(r.get("Payment received amount"))
         rows.append({
             "po_no": r.get("PO NO.", ""), "po_date": to_date_str(po_date),
             "po_month": to_date_str(r.get("Month")),
@@ -535,8 +532,6 @@ def build_active_pos(df, customer_filter, today):
             "approval": approval_s, "remarks": remarks_s, "status": status,
             "age_days": int(age), "delay_days": int(delay_days), "is_delayed": is_delayed,
             "kam": str(r.get("Person Name", "") or ""), "quarter": str(r.get("Quarter", "") or ""),
-            "payment_received_date": pay_recv_date,
-            "payment_received_amount": pay_recv_amt,
         })
     return rows
 
@@ -1388,15 +1383,6 @@ else:
             else:
                 nps_data["showing_overall_fallback"] = False
             
-            # Compute payment received summary from active POs
-            total_payment_received = sum(
-                a.get("payment_received_amount", 0) for a in active
-                if a.get("payment_received_amount", 0) > 0
-            )
-            paid_pos = [
-                a for a in active if a.get("payment_received_date")
-            ]
-
             data = {
                 "active": active, 
                 "hist": hist, 
@@ -1405,8 +1391,6 @@ else:
                 "today": today_ts.strftime("%Y-%m-%d"),
                 "customer": selected_customer, 
                 "kam": auto_kam,
-                "total_payment_received": total_payment_received,
-                "paid_pos_count": len(paid_pos),
             }
 
             cust_display = selected_customer
