@@ -597,8 +597,8 @@ canvas {
       </div>
       <div class="kpi-card kpi-steel">
         <div class="kpi-label">Payment Outstanding</div>
-        <div class="kpi-value" id="kpiOut">--</div>
-        <div class="kpi-delta down" id="kpiOutSub">--</div>
+        <div class="kpi-value" id="kpiOut" style="font-size:18px;color:var(--ink-3)">N/A</div>
+        <div class="kpi-delta" id="kpiOutSub" style="color:var(--ink-4)">Accounts data pending</div>
       </div>
       <div class="kpi-card kpi-emerald">
         <div class="kpi-label">NPS · CSAT</div>
@@ -834,7 +834,7 @@ canvas {
   </section>
 
   <!-- 06 COLLECTIONS -->
-  <section class="section fade-in delay-5">
+  <section class="section fade-in delay-5" style="display:none">
     <div class="section-header">
       <span class="section-num">06 ·</span>
       <h2 class="section-title">Collection & Payment Dashboard</h2>
@@ -861,40 +861,7 @@ canvas {
           <div class="def-row"><div class="def-lbl">Paid Invoices</div><div class="def-val success" id="collPaid">--</div></div>
           <div class="def-row"><div class="def-lbl">Avg Days Overdue</div><div class="def-val amber" id="collDSO">--</div></div>
           <div class="def-row"><div class="def-lbl">Largest Overdue PO</div><div class="def-val" id="collMax">--</div></div>
-          <div class="def-row" style="border-top:1px solid var(--line);padding-top:10px;margin-top:4px"><div class="def-lbl">Payment Received (from POs)</div><div class="def-val success" id="collPayRecv">--</div></div>
-          <div class="def-row"><div class="def-lbl">POs with Payment Received</div><div class="def-val success" id="collPayCount">--</div></div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PAYMENT REGISTER CARD -->
-  <section class="section fade-in delay-5" id="paymentRegisterSection">
-    <div class="section-header">
-      <span class="section-num">06b ·</span>
-      <h2 class="section-title">Payment Register</h2>
-      <span class="section-sub">Received payments from PO Approval sheet</span>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">PO-wise Payment Received</div>
-        <div class="card-sub" id="payRegCount">--</div>
-      </div>
-      <div class="scroll-table">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>PO Number</th>
-              <th>PO Date</th>
-              <th>PO Value (₹)</th>
-              <th>Approval Status</th>
-              <th>Payment Received Date</th>
-              <th class="right">Payment Received (₹)</th>
-              <th class="right">Balance (₹)</th>
-            </tr>
-          </thead>
-          <tbody id="payRegTable"></tbody>
-        </table>
       </div>
     </div>
   </section>
@@ -985,8 +952,8 @@ document.getElementById('kpiDelayed').textContent = M.delayed;
 document.getElementById('kpiDelayedSub').innerHTML = '▼ ' + M.onHold + ' on hold ';
 const openComplaints = COMPLAINTS.filter(c => c.status !== 'Closed').length;
 const breaches = COMPLAINTS.filter(c => c.sla==='Yes' && c.status!=='Closed').length;
-document.getElementById('kpiOut').innerHTML = '₹ ' + (M.outstanding/100000).toFixed(1) + '<span class="unit">L</span>';
-document.getElementById('kpiOutSub').innerHTML = '⚠ ₹' + (M.overdueAmt/100000).toFixed(1) + 'L overdue';
+// Payment Outstanding KPI intentionally left blank (accounts data pending)
+// document.getElementById('kpiOut') and kpiOutSub are set via HTML defaults
 // NPS Display with fallback indicator
 const npsValue = FEEDBACK_DATA.nps_score;
 const csatValue = FEEDBACK_DATA.csat_score;
@@ -1471,67 +1438,11 @@ if (FEEDBACK.length > 0) {
     }
 }
 
-// PAYMENT RECEIVED (from active POs — columns L & M)
-const payRecvTotal = DATA.total_payment_received || 0;
-const payRecvCount = DATA.paid_pos_count || 0;
-document.getElementById('collPayRecv').textContent  = inr(payRecvTotal);
-document.getElementById('collPayCount').textContent = payRecvCount + ' PO' + (payRecvCount !== 1 ? 's' : '');
-
-// Payment Register Table
-const payRegTable = document.getElementById('payRegTable');
-const payRegCount = document.getElementById('payRegCount');
-const posWithPayment = DATA.active.filter(a => a.payment_received_date || a.payment_received_amount > 0);
-payRegCount.textContent = posWithPayment.length + ' record' + (posWithPayment.length !== 1 ? 's' : '');
-if (!posWithPayment.length) {
-  payRegTable.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-3)">No payment records found for this customer.</td></tr>';
-} else {
-  posWithPayment.forEach(po => {
-    const balance = po.value - po.payment_received_amount;
-    const balClass = balance > 0 ? 'warn' : (balance < 0 ? 'danger' : 'success');
-    const tr = document.createElement('tr');
-    tr.innerHTML = \`
-      <td class="mono strong">\${po.po_no}</td>
-      <td class="mono muted">\${fmtDateFull(po.po_date)}</td>
-      <td class="mono right">\${inr(po.value)}</td>
-      <td><span class="pill pill-\${statusToPillClass(po.approval || po.status)}" style="font-size:10px;">\${po.approval || po.status}</span></td>
-      <td class="mono \${po.payment_received_date ? 'success' : 'muted'}">\${po.payment_received_date ? fmtDateFull(po.payment_received_date) : '—'}</td>
-      <td class="mono right success">\${inr(po.payment_received_amount)}</td>
-      <td class="mono right \${balClass}">\${inr(balance)}</td>
-    \`;
-    payRegTable.appendChild(tr);
-  });
-  // Totals row
-  const totalVal    = posWithPayment.reduce((s,p) => s + p.value, 0);
-  const totalRecvd  = posWithPayment.reduce((s,p) => s + p.payment_received_amount, 0);
-  const totalBal    = totalVal - totalRecvd;
-  const tfooter = document.createElement('tr');
-  tfooter.style.cssText = 'background:var(--bg-2);font-weight:700;border-top:2px solid var(--line-strong)';
-  tfooter.innerHTML = \`
-    <td colspan="2" style="font-weight:700;color:var(--ink-1)">TOTAL</td>
-    <td class="mono right strong">\${inr(totalVal)}</td>
-    <td></td>
-    <td></td>
-    <td class="mono right success">\${inr(totalRecvd)}</td>
-    <td class="mono right \${totalBal > 0 ? 'warn' : 'success'}">\${inr(totalBal)}</td>
-  \`;
-  payRegTable.appendChild(tfooter);
-}
-
 // COLLECTIONS 
-document.getElementById('collOut').textContent = inr(M.outstanding);
-document.getElementById('collOverdue').textContent = inr(M.overdueAmt);
-document.getElementById('collDue').textContent = inr(M.dueAmt);
-document.getElementById('collPaid').textContent = M.paidCount + ' invoices';
-document.getElementById('collDSO').textContent = Math.round(M.avgAging) + ' days';
-document.getElementById('collMax').textContent = M.maxOverdue ? (M.maxOverdue.po_no + ' · ' + inr(M.maxOverdue.inv_value)) : '—';
+// Collection section is hidden — no updates needed for collOut, collOverdue etc.
 
-const agingData = [
-  { lbl: 'Due (0d)', val: M.dueAmt, color: '#3b82f6' },
-  { lbl: '1–30 d',    val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging<=30).reduce((s,h)=>s+h.inv_value,0), color: '#f59e0b' },
-  { lbl: '31–60 d',   val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging>30&&h.aging<=60).reduce((s,h)=>s+h.inv_value,0), color: '#ff6b1a' },
-  { lbl: '60+ d',     val: DATA.hist.filter(h=>h.pay_status==='Overdue'&&h.aging>60).reduce((s,h)=>s+h.inv_value,0), color: '#ef4444' },
-];
-new Chart(document.getElementById('agingChart'), {
+// agingChart skipped — section 06 is hidden
+if (false) new Chart(document.getElementById('agingChart'), {
   type: 'bar',
   data: { labels: agingData.map(a=>a.lbl), datasets: [{
     data: agingData.map(a=>a.val),
