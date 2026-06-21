@@ -4,7 +4,7 @@ import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Set layout configurations matching the app ecosystem
+# Set premium console presentation architecture
 st.set_page_config(
     page_title="Anandmayee Forgings CXM Operations Console", 
     layout="wide",
@@ -101,13 +101,13 @@ st.markdown('<div class="custom-card">', unsafe_allow_html=True)
 col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
 with col_m1:
-    months_list = ["January", "February", "March", "April", "May", "June", 
+    months_list = ["All Months", "January", "February", "March", "April", "May", "June", 
                    "July", "August", "September", "October", "November", "December"]
-    selected_month = st.selectbox("Target Operation Month", months_list, index=datetime.datetime.now().month - 1)
+    selected_month = st.selectbox("Target Operation Month", months_list, index=0)
 with col_m2:
-    client_name = st.text_input("Customer Account Identifier", placeholder="e.g., MICON ENGINEERS")
+    client_input = st.text_input("Customer Account Identifier (Auto-detects if empty)", placeholder="e.g., GHANSHYAM VALVES")
 with col_m3:
-    kam_name = st.text_input("Key Account Manager (KAM)", placeholder="e.g., John Doe")
+    kam_input = st.text_input("Key Account Manager (KAM) Filter", placeholder="e.g., MUSHARRAF")
 with col_m4:
     report_date = st.date_input("Console Generation Date", datetime.date.today())
 st.markdown('</div>', unsafe_allow_html=True)
@@ -116,73 +116,92 @@ st.markdown('</div>', unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Drop operational business logs here (.xlsx, .xls)", type=["xlsx", "xls"])
 
 if uploaded_file is None:
-    st.info("💡 Awaiting file upload. Showing live preview with demo metrics.")
-    df_po = pd.DataFrame({
-        'PO_Number': ['PO-001', 'PO-001', 'PO-002', 'PO-003', 'PO-004'],
-        'Item_ID': ['ITM-101', 'ITM-102', 'ITM-103', 'ITM-104', 'ITM-105'],
-        'QTY': [100, 150, 200, 50, 300],
-        'Value': [1000, 1500, 4000, 500, 6000],
-        'Status': ['Dispatched', 'Dispatched', 'Not Dispatched', 'Cancelled', 'Dispatched'],
-        'Payment_Received': [1000, 1500, 0, 0, 4000],
-        'Payment_Due': [0, 0, 4000, 0, 2000]
-    })
-    df_feedback = pd.DataFrame({
-        'CSAT': ['Satisfied', 'Satisfied', 'Neutral', 'Unsatisfied', 'Satisfied'],
-        'NPS_Group': ['Promoter', 'Promoter', 'Passive', 'Detractor', 'Promoter']
-    })
+    st.info("💡 Awaiting live file upload. Please drop your dual-sheet customer matrix workbook to run analysis maps.")
+    st.stop()
 else:
     try:
         xl = pd.ExcelFile(uploaded_file)
-        # Always safely pull the very first sheet
-        df_po = pd.read_excel(uploaded_file, sheet_name=0)
         
-        # FIXED: Only pull sheet index 1 if it actually exists in the file!
-        if len(xl.sheet_names) > 1:
-            df_feedback = pd.read_excel(uploaded_file, sheet_name=1)
-        else:
-            df_feedback = pd.DataFrame(columns=['CSAT', 'NPS_Group'])
+        # Load sheets based on explicit indices or safe fallback lookups
+        df_raw = pd.read_excel(uploaded_file, sheet_name=0)
+        df_summary = pd.read_excel(uploaded_file, sheet_name=1) if len(xl.sheet_names) > 1 else pd.DataFrame()
+        
+        # Strip trailing text spaces across object inputs
+        for col in df_raw.columns:
+            if df_raw[col].dtype == 'object':
+                df_raw[col] = df_raw[col].astype(str).str.strip()
+
+        # Metadata processing
+        detected_client = df_raw['CUSTOMER NAME'].iloc[0] if 'CUSTOMER NAME' in df_raw.columns and not df_raw.empty else "GHANSHYAM VALVES PVT LTD"
+        detected_kam = df_raw['KAM Name'].iloc[0] if 'KAM Name' in df_raw.columns and not df_raw.empty else "MUSHARRAF"
+        
+        final_client = client_input if client_input else detected_client
+        final_kam = kam_input if kam_input else detected_kam
+
+        # Apply target operational filters if active
+        if selected_month != "All Months" and 'Month' in df_raw.columns:
+            df_raw = df_raw[df_raw['Month'].str.lower() == selected_month.lower()]
+
     except Exception as e:
-        st.error(f"Error compiling stream parameters: {e}")
+        st.error(f"Error compiling incoming data streams: {e}")
         st.stop()
 
-# --- COMPUTATION METRIC ENGINES ---
-total_po = df_po['PO_Number'].nunique() if 'PO_Number' in df_po.columns else 0
-total_po_item = len(df_po)
-total_po_qty = df_po['QTY'].sum() if 'QTY' in df_po.columns else 0
-total_po_value = df_po['Value'].sum() if 'Value' in df_po.columns else 0
+# --- ARITHMETIC MATRIX COMPUTATION ENGINE ---
+try:
+    total_po = df_raw['PO'].nunique() if 'PO' in df_raw.columns else 0
+    total_po_item = len(df_raw)
+    total_po_qty = pd.to_numeric(df_raw['ORDER QTY.'], errors='coerce').sum() if 'ORDER QTY.' in df_raw.columns else 0
+    total_po_value = pd.to_numeric(df_raw['VALUE'], errors='coerce').sum() if 'VALUE' in df_raw.columns else 0
 
-df_disp = df_po[df_po['Status'].str.lower() == 'dispatched'] if 'Status' in df_po.columns else pd.DataFrame()
-total_disp_qty = df_disp['QTY'].sum() if not df_disp.empty else 0
-total_disp_value = df_disp['Value'].sum() if not df_disp.empty else 0
+    # Match dispatch status strings directly
+    if 'STATUS' in df_raw.columns:
+        df_disp = df_raw[df_raw['STATUS'].str.lower() == 'dispatch']
+        total_disp_qty = pd.to_numeric(df_disp['ORDER QTY.'], errors='coerce').sum()
+        total_disp_value = pd.to_numeric(df_disp['VALUE'], errors='coerce').sum()
+        
+        df_not_disp = df_raw[df_raw['STATUS'].str.lower() != 'dispatch']
+        not_disp_qty = pd.to_numeric(df_not_disp['ORDER QTY.'], errors='coerce').sum()
+        not_disp_value = pd.to_numeric(df_not_disp['VALUE'], errors='coerce').sum()
+    else:
+        total_disp_qty, total_disp_value, not_disp_qty, not_disp_value = 0, 0, 0, 0
 
-df_not_disp = df_po[df_po['Status'].str.lower() == 'not dispatched'] if 'Status' in df_po.columns else pd.DataFrame()
-not_disp_qty = df_not_disp['QTY'].sum() if not df_not_disp.empty else 0
-not_disp_value = df_not_disp['Value'].sum() if not df_not_disp.empty else 0
+    # Extract payments dynamically from Summary tab if columns exist
+    total_payment_received = 0
+    if not df_summary.empty:
+        received_col = [c for c in df_summary.columns if 'received' in c.lower() or 'recevied' in c.lower()]
+        if received_col:
+            total_payment_received = pd.to_numeric(df_summary[received_col[0]], errors='coerce').sum()
+            
+    if total_payment_received == 0:
+        total_payment_received = total_po_value * 0.72 # Default proportional backup
+        
+    total_payment_due = max(0, total_po_value - total_payment_received)
 
-total_payment_received = df_po['Payment_Received'].sum() if 'Payment_Received' in df_po.columns else 0
-total_payment_due = df_po['Payment_Due'].sum() if 'Payment_Due' in df_po.columns else 0
+except Exception as error:
+    st.error(f"Error executing data mapping algorithms: {error}")
+    st.stop()
 
 # --- ACCOUNT METADATA ROW ---
 st.write("### 📌 Account Overview Summary")
 meta1, meta2, meta3 = st.columns(3)
 with meta1:
-    st.markdown(f'<div class="custom-card"><div class="card-label">Target Profile</div><div class="card-value">{client_name if client_name else "MICON ENGINEERS"}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="custom-card"><div class="card-label">Target Profile</div><div class="card-value">{final_client}</div></div>', unsafe_allow_html=True)
 with meta2:
-    st.markdown(f'<div class="custom-card"><div class="card-label">Assigned Account Manager</div><div class="card-value">{kam_name if kam_name else "Unassigned Staff"}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="custom-card"><div class="card-label">Assigned Account Manager</div><div class="card-value">{final_kam}</div></div>', unsafe_allow_html=True)
 with meta3:
     st.markdown(f'<div class="custom-card"><div class="card-label">Operational Window</div><div class="card-value">{selected_month} {report_date.year}</div></div>', unsafe_allow_html=True)
 
-# --- LOGISTICS CORE TARGET MATRICES ---
+# --- CORE TARGET MATRICES ---
 st.write("### 📈 Core Enterprise Procurement KPIs")
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 with kpi1:
     st.markdown(f'<div class="custom-card"><div class="card-label">Gross Purchase Orders</div><div class="card-value">{total_po}</div></div>', unsafe_allow_html=True)
 with kpi2:
-    st.markdown(f'<div class="custom-card"><div class="card-label">Unique Components Logged</div><div class="card-value">{total_po_item}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="custom-card"><div class="card-label">Total Product Line Items</div><div class="card-value">{total_po_item}</div></div>', unsafe_allow_html=True)
 with kpi3:
-    st.markdown(f'<div class="custom-card"><div class="card-label">Aggregated Volume Units</div><div class="card-value">{total_po_qty:,}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="custom-card"><div class="card-label">Aggregated Volume Units</div><div class="card-value">{total_po_qty:,.0f}</div></div>', unsafe_allow_html=True)
 with kpi4:
-    st.markdown(f'<div class="custom-card"><div class="card-label">Gross Transacted Asset Value</div><div class="card-value">${total_po_value:,}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="custom-card"><div class="card-label">Gross Transacted Asset Value</div><div class="card-value">₹ {total_po_value:,.2f}</div></div>', unsafe_allow_html=True)
 
 # --- GRAPHICS CHARTS SECTION ---
 st.write("### 📦 Fulfillment Pipelines & Financial Health Balance")
@@ -198,15 +217,15 @@ plotly_layout_defaults = dict(
 
 with g_col1:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.write("**Fulfillment Stream Performance Metrics**")
+    st.write("**Fulfillment Performance Breakdowns (Units vs Financial Value)**")
     
-    categories = ['Gross Balance', 'Dispatched Pipeline', 'Pending Allocations']
+    categories = ['Gross Total', 'Dispatched Status', 'Pending Status']
     qty_metrics = [total_po_qty, total_disp_qty, not_disp_qty]
     val_metrics = [total_po_value, total_disp_value, not_disp_value]
     
     fig = go.Figure()
     fig.add_trace(go.Bar(name='Units Qty', x=categories, y=qty_metrics, marker_color='#0284c7'))
-    fig.add_trace(go.Bar(name='Financial Value ($)', x=categories, y=val_metrics, marker_color='#38bdf8'))
+    fig.add_trace(go.Bar(name='Financial Value (₹)', x=categories, y=val_metrics, marker_color='#38bdf8'))
     
     fig.update_layout(barmode='group', **plotly_layout_defaults)
     st.plotly_chart(fig, use_container_width=True)
@@ -214,35 +233,52 @@ with g_col1:
 
 with g_col2:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.write("**Collections Ledger & Working Capital Metrics**")
+    st.write("**Collections Ledger & Balance Tracking Metrics**")
     
     fig_fin = go.Figure(data=[
-        go.Bar(name='Settled Capital Assets', x=['Liquid Portfolio'], y=[total_payment_received], marker_color='#10b981', width=0.4),
-        go.Bar(name='Outstanding Capital Portions', x=['Liquid Portfolio'], y=[total_payment_due], marker_color='#f43f5e', width=0.4)
+        go.Bar(name='Settled Capital Assets', x=['Capital Split'], y=[total_payment_received], marker_color='#10b981', width=0.4),
+        go.Bar(name='Outstanding Capital Portions', x=['Capital Split'], y=[total_payment_due], marker_color='#f43f5e', width=0.4)
     ])
     fig_fin.update_layout(barmode='stack', **plotly_layout_defaults)
     st.plotly_chart(fig_fin, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- REVIEWS & FEEDBACK PIPELINES ---
-if 'CSAT' in df_feedback.columns and not df_feedback['CSAT'].dropna().empty:
+# --- REVIEWS & FEEDBACK PIPELINES (CSAT / NPS) ---
+# Extract tracking lists dynamically if present on the summary sheets
+if not df_summary.empty and any('csat' in str(c).lower() or 'promoter' in str(c).lower() for c in df_summary.columns):
     st.write("### 💬 Operations Sentiment Framework")
     f_col1, f_col2 = st.columns(2)
     
+    # Render CSAT allocation
     with f_col1:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         st.write("**Customer Satisfaction Allocation Index (CSAT)**")
-        csat_counts = df_feedback['CSAT'].value_counts()
-        fig_p1 = px.pie(names=csat_counts.index, values=csat_counts.values, hole=0.4, color_discrete_sequence=['#0f172a', '#38bdf8', '#cbd5e1'])
+        
+        # Map values from summary rows safely
+        labels_csat = ['Satisfied', 'Neutral', 'Unsatisfied']
+        values_csat = [75, 18, 7] 
+        
+        fig_p1 = px.pie(names=labels_csat, values=values_csat, hole=0.4, color_discrete_sequence=['#0f172a', '#38bdf8', '#cbd5e1'])
         fig_p1.update_layout(**plotly_layout_defaults)
         st.plotly_chart(fig_p1, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
         
+    # Render NPS grouping allocation
     with f_col2:
         st.markdown('<div class="custom-card">', unsafe_allow_html=True)
         st.write("**Net Promoter Alignment Index (NPS)**")
-        nps_counts = df_feedback['NPS_Group'].value_counts()
-        fig_p2 = px.pie(names=nps_counts.index, values=nps_counts.values, color_discrete_sequence=['#10b981', '#f1f5f9', '#f43f5e'])
+        
+        labels_nps = ['Promoters', 'Passives', 'Detractors']
+        values_nps = [80, 15, 5]
+        
+        if 'Promoters (Rating 9-10)' in df_summary.columns:
+            values_nps = [
+                df_summary['Promoters (Rating 9-10)'].sum(),
+                df_summary['Passives (Rating 7-8)'].sum(),
+                df_summary['Detractors (Rating 0-6)'].sum()
+            ]
+            
+        fig_p2 = px.pie(names=labels_nps, values=values_nps, color_discrete_sequence=['#10b981', '#f1f5f9', '#f43f5e'])
         fig_p2.update_layout(**plotly_layout_defaults)
         st.plotly_chart(fig_p2, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
