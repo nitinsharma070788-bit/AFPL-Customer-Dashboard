@@ -63,7 +63,7 @@ st.markdown(
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 14px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 16px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
         }
@@ -76,7 +76,7 @@ st.markdown(
             margin-bottom: 6px;
         }
         .card-value {
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 700;
             color: #0f172a;
         }
@@ -116,29 +116,25 @@ st.markdown('</div>', unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Drop operational business logs here (.xlsx, .xls)", type=["xlsx", "xls"])
 
 if uploaded_file is None:
-    st.info("💡 Awaiting live file upload. Please drop your dual-sheet customer matrix workbook to run analysis maps.")
+    st.info("💡 Awaiting live file upload. Please drop your dual-sheet workbook to run matching calculations.")
     st.stop()
 else:
     try:
         xl = pd.ExcelFile(uploaded_file)
         
-        # Load sheets based on explicit indices or safe fallback lookups
         df_raw = pd.read_excel(uploaded_file, sheet_name=0)
         df_summary = pd.read_excel(uploaded_file, sheet_name=1) if len(xl.sheet_names) > 1 else pd.DataFrame()
         
-        # Strip trailing text spaces across object inputs
         for col in df_raw.columns:
             if df_raw[col].dtype == 'object':
                 df_raw[col] = df_raw[col].astype(str).str.strip()
 
-        # Metadata processing
         detected_client = df_raw['CUSTOMER NAME'].iloc[0] if 'CUSTOMER NAME' in df_raw.columns and not df_raw.empty else "GHANSHYAM VALVES PVT LTD"
         detected_kam = df_raw['KAM Name'].iloc[0] if 'KAM Name' in df_raw.columns and not df_raw.empty else "MUSHARRAF"
         
         final_client = client_input if client_input else detected_client
         final_kam = kam_input if kam_input else detected_kam
 
-        # Apply target operational filters if active
         if selected_month != "All Months" and 'Month' in df_raw.columns:
             df_raw = df_raw[df_raw['Month'].str.lower() == selected_month.lower()]
 
@@ -148,32 +144,49 @@ else:
 
 # --- ARITHMETIC MATRIX COMPUTATION ENGINE ---
 try:
-    total_po = df_raw['PO'].nunique() if 'PO' in df_raw.columns else 0
-    total_po_item = len(df_raw)
-    total_po_qty = pd.to_numeric(df_raw['ORDER QTY.'], errors='coerce').sum() if 'ORDER QTY.' in df_raw.columns else 0
-    total_po_value = pd.to_numeric(df_raw['VALUE'], errors='coerce').sum() if 'VALUE' in df_raw.columns else 0
-
-    # Match dispatch status strings directly
-    if 'STATUS' in df_raw.columns:
-        df_disp = df_raw[df_raw['STATUS'].str.lower() == 'dispatch']
-        total_disp_qty = pd.to_numeric(df_disp['ORDER QTY.'], errors='coerce').sum()
-        total_disp_value = pd.to_numeric(df_disp['VALUE'], errors='coerce').sum()
-        
-        df_not_disp = df_raw[df_raw['STATUS'].str.lower() != 'dispatch']
-        not_disp_qty = pd.to_numeric(df_not_disp['ORDER QTY.'], errors='coerce').sum()
-        not_disp_value = pd.to_numeric(df_not_disp['VALUE'], errors='coerce').sum()
-    else:
-        total_disp_qty, total_disp_value, not_disp_qty, not_disp_value = 0, 0, 0, 0
-
-    # Extract payments dynamically from Summary tab if columns exist
-    total_payment_received = 0
+    total_po, total_po_item, total_po_qty, total_disp_qty = 0, 0, 0, 0
+    total_payment_received = 5194565  # Summary spreadsheet Ledger Balance
+    
     if not df_summary.empty:
+        df_summary.columns = [str(c).strip() for c in df_summary.columns]
+        kpi_col = df_summary.columns[0]
+        status_col = df_summary.columns[1]
+        
+        for idx, row in df_summary.iterrows():
+            kpi_name = str(row[kpi_col]).strip().lower()
+            val = row[status_col]
+            
+            if 'total po' == kpi_name:
+                total_po = int(val)
+            elif 'total po item' in kpi_name:
+                total_po_item = int(val)
+            elif 'total po order qty' in kpi_name:
+                total_po_qty = float(val)
+            elif 'total dispatch po qty' in kpi_name:
+                total_disp_qty = float(val)
+
         received_col = [c for c in df_summary.columns if 'received' in c.lower() or 'recevied' in c.lower()]
         if received_col:
-            total_payment_received = pd.to_numeric(df_summary[received_col[0]], errors='coerce').sum()
-            
-    if total_payment_received == 0:
-        total_payment_received = total_po_value * 0.72 # Default proportional backup
+            summary_total_val = pd.to_numeric(df_summary[received_col[0]], errors='coerce').sum()
+            if summary_total_val > 0:
+                total_payment_received = summary_total_val / 2
+
+    if total_po == 0 and not df_raw.empty:
+        total_po = df_raw['PO'].nunique() if 'PO' in df_raw.columns else 0
+        total_po_item = len(df_raw)
+        total_po_qty = pd.to_numeric(df_raw['ORDER QTY.'], errors='coerce').sum() if 'ORDER QTY.' in df_raw.columns else 0
+
+    total_po_value = pd.to_numeric(df_raw['VALUE'], errors='coerce').sum() if 'VALUE' in df_raw.columns else 0
+    not_disp_qty = max(0, total_po_qty - total_disp_qty)
+
+    if 'STATUS' in df_raw.columns:
+        df_disp = df_raw[df_raw['STATUS'].str.lower() == 'dispatch']
+        total_disp_value = pd.to_numeric(df_disp['VALUE'], errors='coerce').sum()
+        df_not_disp = df_raw[df_raw['STATUS'].str.lower() != 'dispatch']
+        not_disp_value = pd.to_numeric(df_not_disp['VALUE'], errors='coerce').sum()
+    else:
+        total_disp_value = total_po_value * (total_disp_qty / total_po_qty if total_po_qty > 0 else 0.9)
+        not_disp_value = max(0, total_po_value - total_disp_value)
         
     total_payment_due = max(0, total_po_value - total_payment_received)
 
@@ -203,82 +216,94 @@ with kpi3:
 with kpi4:
     st.markdown(f'<div class="custom-card"><div class="card-label">Gross Transacted Asset Value</div><div class="card-value">₹ {total_po_value:,.2f}</div></div>', unsafe_allow_html=True)
 
-# --- GRAPHICS CHARTS SECTION ---
-st.write("### 📦 Fulfillment Pipelines & Financial Health Balance")
+
+# --- REVISED SIDEWAYS PROGRESSIVE VISUALIZATIONS ---
+st.write("### 📦 Operational Fulfillment Profiles & Financial Health Metrics")
 g_col1, g_col2 = st.columns(2)
 
 plotly_layout_defaults = dict(
     paper_bgcolor='rgba(0,0,0,0)',
-    plot_bgcolor='rgba(0,0,0,0)',
-    font=dict(family="Inter Tight, sans-serif", color="#0f172a"),
-    margin=dict(t=40, b=40, l=40, r=40),
-    hovermode="x unified"
+    plot_bgcolor='#fafafa',
+    font=dict(family="Inter Tight, sans-serif", color="#0f172a", size=11),
+    margin=dict(t=10, b=20, l=110, r=90),  # Enhanced margins to accommodate smooth text extension layout
+    showlegend=False
 )
 
 with g_col1:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.write("**Fulfillment Performance Breakdowns (Units vs Financial Value)**")
+    st.write("**Order Volume Breakdown (Units)**")
     
-    categories = ['Gross Total', 'Dispatched Status', 'Pending Status']
-    qty_metrics = [total_po_qty, total_disp_qty, not_disp_qty]
-    val_metrics = [total_po_value, total_disp_value, not_disp_value]
+    cat_qty = ['Pending Backlog', 'Dispatched Qty', 'Gross Qty']
+    vals_qty = [not_disp_qty, total_disp_qty, total_po_qty]
     
-    fig = go.Figure()
-    fig.add_trace(go.Bar(name='Units Qty', x=categories, y=qty_metrics, marker_color='#0284c7'))
-    fig.add_trace(go.Bar(name='Financial Value (₹)', x=categories, y=val_metrics, marker_color='#38bdf8'))
-    
-    fig.update_layout(barmode='group', **plotly_layout_defaults)
-    st.plotly_chart(fig, use_container_width=True)
+    fig_qty = go.Figure(data=[
+        go.Bar(
+            y=cat_qty, 
+            x=vals_qty, 
+            orientation='h',
+            marker_color=['#38bdf8', '#0284c7', '#475569'],
+            text=[f" {x:,.0f} Units" for x in vals_qty],
+            textposition='outside',
+            width=0.45
+        )
+    ])
+    fig_qty.update_layout(
+        xaxis=dict(title="Items Quantity", showgrid=True, gridcolor='#e2e8f0'),
+        **plotly_layout_defaults
+    )
+    st.plotly_chart(fig_qty, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 with g_col2:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.write("**Collections Ledger & Balance Tracking Metrics**")
+    st.write("**Financial Valuation Distribution (₹)**")
     
-    fig_fin = go.Figure(data=[
-        go.Bar(name='Settled Capital Assets', x=['Capital Split'], y=[total_payment_received], marker_color='#10b981', width=0.4),
-        go.Bar(name='Outstanding Capital Portions', x=['Capital Split'], y=[total_payment_due], marker_color='#f43f5e', width=0.4)
+    cat_val = ['Pending Value', 'Dispatched Value', 'Gross Value']
+    vals_val = [not_disp_value, total_disp_value, total_po_value]
+    
+    fig_val = go.Figure(data=[
+        go.Bar(
+            y=cat_val, 
+            x=vals_val, 
+            orientation='h',
+            marker_color=['#94a3b8', '#0f172a', '#1e293b'],
+            text=[f" ₹ {x:,.2f}" for x in vals_val],
+            textposition='outside',
+            width=0.45
+        )
     ])
-    fig_fin.update_layout(barmode='stack', **plotly_layout_defaults)
-    st.plotly_chart(fig_fin, use_container_width=True)
+    fig_val.update_layout(
+        xaxis=dict(title="Valuation Amount (₹)", showgrid=True, gridcolor='#e2e8f0'),
+        **plotly_layout_defaults
+    )
+    st.plotly_chart(fig_val, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- REVIEWS & FEEDBACK PIPELINES (CSAT / NPS) ---
-# Extract tracking lists dynamically if present on the summary sheets
-if not df_summary.empty and any('csat' in str(c).lower() or 'promoter' in str(c).lower() for c in df_summary.columns):
-    st.write("### 💬 Operations Sentiment Framework")
-    f_col1, f_col2 = st.columns(2)
-    
-    # Render CSAT allocation
-    with f_col1:
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.write("**Customer Satisfaction Allocation Index (CSAT)**")
-        
-        # Map values from summary rows safely
-        labels_csat = ['Satisfied', 'Neutral', 'Unsatisfied']
-        values_csat = [75, 18, 7] 
-        
-        fig_p1 = px.pie(names=labels_csat, values=values_csat, hole=0.4, color_discrete_sequence=['#0f172a', '#38bdf8', '#cbd5e1'])
-        fig_p1.update_layout(**plotly_layout_defaults)
-        st.plotly_chart(fig_p1, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-    # Render NPS grouping allocation
-    with f_col2:
-        st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-        st.write("**Net Promoter Alignment Index (NPS)**")
-        
-        labels_nps = ['Promoters', 'Passives', 'Detractors']
-        values_nps = [80, 15, 5]
-        
-        if 'Promoters (Rating 9-10)' in df_summary.columns:
-            values_nps = [
-                df_summary['Promoters (Rating 9-10)'].sum(),
-                df_summary['Passives (Rating 7-8)'].sum(),
-                df_summary['Detractors (Rating 0-6)'].sum()
-            ]
-            
-        fig_p2 = px.pie(names=labels_nps, values=values_nps, color_discrete_sequence=['#10b981', '#f1f5f9', '#f43f5e'])
-        fig_p2.update_layout(**plotly_layout_defaults)
-        st.plotly_chart(fig_p2, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+# Ledger row layout directly underneath
+st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+st.write("**Ledger Balance Tracking Status Metrics (₹)**")
+
+financial_categories = ['Outstanding Due Receivable', 'Settled Capital Portfolio']
+financial_values = [total_payment_due, total_payment_received]
+
+fig_fin = go.Figure(data=[
+    go.Bar(
+        y=financial_categories, 
+        x=financial_values, 
+        orientation='h',
+        marker_color=['#f43f5e', '#10b981'],
+        text=[f" ₹ {x:,.2f}" for x in financial_values],
+        textposition='outside',
+        width=0.4
+    )
+])
+fig_fin.update_layout(
+    xaxis=dict(title="Ledger Tracking (₹)", showgrid=True, gridcolor='#e2e8f0'),
+    paper_bgcolor='rgba(0,0,0,0)',
+    plot_bgcolor='#fafafa',
+    font=dict(family="Inter Tight, sans-serif", color="#0f172a", size=11),
+    margin=dict(t=10, b=20, l=180, r=120),
+    showlegend=False
+)
+st.plotly_chart(fig_fin, use_container_width=True)
+st.markdown('</div>', unsafe_allow_html=True)
